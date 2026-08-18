@@ -9,6 +9,7 @@
 # 用法：
 #   ./install.sh            # 装核心（插件 + 技能）
 #   ./install.sh --mcp      # 额外装 MCP 引擎
+#   ./install.sh --daemon   # 额外把 dsh 托管进 launchd（KeepAlive 自愈 + 热重载）
 #   DSH_PROFILE=~/.dsh/profiles/web ./install.sh
 #
 set -euo pipefail
@@ -16,6 +17,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WITH_MCP=0
 for a in "$@"; do [ "$a" = "--mcp" ] && WITH_MCP=1; done
+WITH_DAEMON=0
+for a in "$@"; do [ "$a" = "--daemon" ] && WITH_DAEMON=1; done
 
 # 1) 定位 dsh
 DSH_PROFILE="${DSH_PROFILE:-$HOME/.dsh/profiles/web}"
@@ -120,10 +123,28 @@ PYEOF
   echo "✓ MCP 引擎已接线"
 fi
 
-# 6) 重启 dsh（优先 launchd，否则提示手动重启）
+# 6) 重启 / 托管 dsh
 PLIST="$HOME/Library/LaunchAgents/com.user.dsh-web.plist"
-if launchctl list 2>/dev/null | grep -q "com.user.dsh-web"; then
-  echo "→ 重启 dsh（launchd）"
+if [ "$WITH_DAEMON" = "1" ]; then
+  # 把 dsh 托管进 launchd（KeepAlive 自愈 + 改配置后 xuanyuan_reload 热重载）
+  if [ ! -f "$PLIST" ]; then
+    echo "⚠ 未找到 $PLIST，无法托管。请参考 README 创建 launchd plist 后重跑 --daemon"
+  elif launchctl bootstrap "gui/$(id -u)" "$PLIST" 2>/dev/null; then
+    echo "✓ launchd 已托管 dsh（KeepAlive 自愈生效）"
+  else
+    echo "⚠ launchctl bootstrap 失败（多见于非 GUI session 的远程 shell）。"
+    echo "  请在你本机终端执行："
+    echo "    launchctl bootout gui/$(id -u)/com.user.dsh-web 2>/dev/null"
+    echo "    launchctl bootstrap gui/$(id -u)/com.user.dsh-web.plist"
+  fi
+  sleep 6
+  if lsof -nP -iTCP:3081 -sTCP:LISTEN 2>/dev/null | grep -q LISTEN; then
+    echo "✓ dsh 已监听 3081（托管生效）"
+  else
+    echo "⚠ dsh 尚未起来，请手动检查后确认"
+  fi
+elif launchctl list 2>/dev/null | grep -q "com.user.dsh-web"; then
+  echo "→ 重启 dsh（launchd kickstart）"
   launchctl kickstart -k "gui/$(id -u)/com.user.dsh-web" 2>/dev/null || \
     launchctl kickstart -k com.user.dsh-web 2>/dev/null || true
   sleep 6
@@ -134,6 +155,7 @@ if launchctl list 2>/dev/null | grep -q "com.user.dsh-web"; then
   fi
 else
   echo "→ 未检测到 launchd 托管的 dsh，请手动重启 dsh 使插件生效。"
+  echo "  如需崩溃自愈 + 热重载，重跑：./install.sh --daemon"
 fi
 
 echo

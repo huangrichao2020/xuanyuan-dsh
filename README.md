@@ -94,6 +94,7 @@ git clone https://github.com/huangrichao2020/xuanyuan-dsh.git
 cd xuanyuan-dsh
 ./install.sh            # 核心：插件 + 10 个技能（零依赖）
 ./install.sh --mcp      # 再加 MCP 引擎（需 Python + pip install mcp）
+./install.sh --daemon   # 再把 dsh 托管进 launchd（崩溃自愈 + 热重载，需本机终端）
 ```
 
 脚本会：
