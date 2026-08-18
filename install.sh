@@ -3,7 +3,7 @@
 # 玄源 · dsh 修真内核 —— 一键植入脚本
 #
 # 作用：把玄源插件 + 技能包装进你的 dsh，让"境界/心境/道韵"每轮注入 agent 循环。
-#   - 核心（零依赖，默认）：cordis 插件 + 3 个技能，任何人复制即生效。
+#   - 核心（零依赖，默认）：cordis 插件 + 全部技能（总纲/境界/心境道韵/HYBRID 元方法论），任何人复制即生效。
 #   - 引擎（可选，--mcp）：xuanyuan-mcp 状态机引擎，需要 Python + pip install mcp。
 #
 # 用法：
@@ -139,7 +139,7 @@ fi
 echo
 echo "════════════════════════════════════════════"
 echo " 玄源 · dsh 修真内核 植入完成"
-echo " 核心：插件(@xuanyuan/dsh-xuanyuan) + 技能(xuanyuan / xuanyuan-realms / xuanyuan-rhythm)"
+echo " 核心：插件(@xuanyuan/dsh-xuanyuan) + 10 个 xuanyuan-* 技能（总纲/境界/心境道韵/HYBRID 元方法论）"
 if [ "$WITH_MCP" = "1" ]; then
   echo " 引擎：xuanyuan-mcp 已接线（工具前缀 mcp__xuanyuan__*）"
 else
