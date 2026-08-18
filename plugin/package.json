@@ -1,0 +1,9 @@
+{
+  "name": "@xuanyuan/dsh-xuanyuan",
+  "version": "1.0.0",
+  "description": "玄源 · dsh 原生修真内核插件：每轮把当前境界/心境/道韵与运行守则注入 agent 的 system prompt，是 dsh 最底层的动态运行钩子。",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "keywords": ["dsh", "deepseek-harness", "agent-loop", "cordis-plugin", "xuanyuan"],
+  "dependencies": {}
+}
