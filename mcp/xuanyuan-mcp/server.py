@@ -1,11 +1,12 @@
 """玄源 · dsh 修真内核 —— MCP 运行时引擎（主动状态机）。
 
-提供 5 个工具，让 agent 显式读写 ~/.dsh/xuanyuan/state.json：
+提供 6 个工具，让 agent 显式读写 ~/.dsh/xuanyuan/state.json：
   - xuanyuan_state      读取当前境界/心境/道韵/经验包
   - xuanyuan_advance    提交经验包（四要素），按规则评估境界进阶
   - xuanyuan_rhythm     进入/退出某道韵，返回流胶囊动作清单
   - xuanyuan_antibloat  按上下文体量给出抗膨胀建议
   - xuanyuan_memory     经验包的列举/检索/清理
+  - xuanyuan_reload     触发 dsh 主进程重启，使 cordis.patch.yml 修改重新加载生效
 
 注意：本文件刻意不使用 `from __future__ import annotations`，
 否则 FastMCP 的 from_function 在 mcp 1.x 下会因 issubclass 失败而崩溃。
@@ -226,6 +227,37 @@ def xuanyuan_memory(action: str = "list", index: int = -1) -> str:
         "count": len(exps),
         "experiences": summary,
     }, ensure_ascii=False, indent=2)
+
+
+@MCP.tool()
+def xuanyuan_reload() -> str:
+    """触发 dsh 主进程重启，使 cordis.patch.yml 的改动重新加载生效。
+
+    通过 launchctl kickstart 重启被 launchd 托管的 dsh；若未托管则回退到
+    pkill 当前 dsh 进程并由启动脚本兜底拉起。调用后当前会话会短暂重连
+    （约 10 秒），重启完成后 xuanyuan 插件与 mcp 引擎以最新配置运行。
+    """
+    import subprocess
+    uid = os.getuid()
+    label = "com.user.dsh-web"
+    # 后台新会话执行：父进程（dsh）被杀时本工具仍能正常返回，重启照常发生
+    script = (
+        f"sleep 2; "
+        f"if launchctl list | grep -q '{label}'; then "
+        f"  launchctl kickstart -k gui/{uid}/{label}; "
+        f"else "
+        f"  pkill -f 'bin.js web' || true; sleep 2; "
+        f"  nohup /bin/zsh /Users/tingchi/launch-dsh-web.sh >/dev/null 2>&1 & "
+        f"fi"
+    )
+    try:
+        subprocess.Popen(["/bin/zsh", "-c", script], start_new_session=True)
+    except Exception as e:
+        return json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False)
+    return json.dumps({
+        "ok": True,
+        "message": "已触发 dsh 重启，约 10 秒后 cordis 修改生效；当前会话会短暂重连。",
+    }, ensure_ascii=False)
 
 
 if __name__ == "__main__":

@@ -145,6 +145,7 @@ cd xuanyuan-dsh
 - `mcp__xuanyuan__rhythm` —— 进入道韵拿流胶囊
 - `mcp__xuanyuan__antibloat` —— 抗膨胀评估
 - `mcp__xuanyuan__memory` —— 经验包存取
+- `mcp__xuanyuan__reload` —— 触发 dsh 主进程重启，使 cordis.patch.yml 的改动重新加载生效
 
 ---
 
@@ -153,6 +154,24 @@ cd xuanyuan-dsh
 - 插件注入文本**不含递归自指**、**不空谈"意识/涌现"**等元话题；
 - 技能手册同样杜绝"参考 xxx 修真技能""讨论意识"这类会触发死循环的指令；
 - 境界/心境/道韵**全部映射到可验证工程行为**，可审计、可关闭。
+
+---
+
+## 自愈与热重启
+
+玄源让 dsh 既能**自动恢复**，又能**主动重载**：
+
+- **崩溃自愈**：用 `launchctl bootstrap` 把 `com.user.dsh-web.plist` 托管后，dsh 崩溃或被杀会被 launchd 的 `KeepAlive` 自动拉起，端口恢复监听。
+- **配置热重载**：改了 `cordis.patch.yml`（增删插件 / MCP）后，调用 MCP 工具 `mcp__xuanyuan__reload`，dsh 主进程会重启并重新加载全部配置，约 10 秒后生效。
+
+一键完成自愈托管——**在你本机终端**执行（WorkBuddy 等远程 shell 没有 GUI bootstrap 权限，会报 `Bootstrap failed: 5`）：
+
+```bash
+launchctl bootout gui/$(id -u)/com.user.dsh-web 2>/dev/null
+launchctl bootstrap gui/$(id -u)/com.user.dsh-web.plist
+```
+
+托管后 dsh 由 launchd 看守：崩溃自动重启；改完配置调 `xuanyuan_reload` 即可热重载，真正实现"自己重启自己"。
 
 ---
 
